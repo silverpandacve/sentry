@@ -7,6 +7,7 @@ import CheckboxField from 'app/views/settings/components/forms/checkboxField';
 import RadioGroup from 'app/views/settings/components/forms/controls/radioGroup';
 import RangeSlider from 'app/views/settings/components/forms/controls/rangeSlider';
 import DatePickerField from 'app/views/settings/components/forms/datePickerField';
+import FileField from 'app/views/settings/components/forms/fileField';
 import Form from 'app/views/settings/components/forms/form';
 import FormField from 'app/views/settings/components/forms/formField';
 import RadioBooleanField from 'app/views/settings/components/forms/radioBooleanField';
@@ -200,6 +201,14 @@ export const _RadioField = () => (
     />
   </Form>
 );
+
+export const __FileField = () => (
+  <Form>
+    <FileField name="field" label="File Field" />
+  </Form>
+);
+
+__FileField.storyName = 'File';
 
 _RadioField.storyName = 'Radio';
 
