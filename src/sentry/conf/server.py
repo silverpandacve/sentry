@@ -544,7 +544,6 @@ CELERY_TASK_SERIALIZER = "pickle"
 CELERY_RESULT_SERIALIZER = "pickle"
 CELERY_ACCEPT_CONTENT = {"pickle"}
 CELERY_IMPORTS = (
-    "sentry.data_export.tasks",
     "sentry.discover.tasks",
     "sentry.incidents.tasks",
     "sentry.sentry_metrics.indexer.tasks",
@@ -560,6 +559,7 @@ CELERY_IMPORTS = (
     "sentry.tasks.clear_expired_snoozes",
     "sentry.tasks.collect_project_platforms",
     "sentry.tasks.commits",
+    "sentry.tasks.data_export",
     "sentry.tasks.deletion",
     "sentry.tasks.digests",
     "sentry.tasks.email",
