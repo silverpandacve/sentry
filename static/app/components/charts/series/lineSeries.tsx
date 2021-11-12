@@ -11,6 +11,7 @@ export default function LineSeries(props: LineSeriesOption): LineSeriesOption {
     ...props,
     type: 'line',
     emphasis: {
+      ...props.emphasis,
       scale: false,
       lineStyle: {
         // disable color highlight on hover

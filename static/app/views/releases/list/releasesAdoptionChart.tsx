@@ -98,6 +98,9 @@ class ReleasesAdoptionChart extends Component<Props> {
           response?.intervals,
           sessionDisplayToField(activeDisplay)
         ),
+        emphasis: {
+          focus: 'series',
+        }
       };
     });
   }
