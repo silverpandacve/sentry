@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import hmac
 import logging
+from typing import Any, Callable, Mapping
 
 import dateutil.parser
 from django.db import IntegrityError, transaction
@@ -10,6 +13,7 @@ from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
+from rest_framework.request import Request
 
 from sentry import options
 from sentry.constants import ObjectStatus
@@ -19,11 +23,13 @@ from sentry.models import (
     CommitFileChange,
     Identity,
     Integration,
+    Organization,
     PullRequest,
     Repository,
 )
 from sentry.shared_integrations.exceptions import ApiError
 from sentry.utils import json
+from sentry.utils.json import JSONData
 
 from .repository import GitHubRepositoryProvider
 
@@ -33,10 +39,17 @@ logger = logging.getLogger("sentry.webhooks")
 class Webhook:
     provider = "github"
 
-    def _handle(self, integration, event, organization, repo):
+    def _handle(
+        self,
+        integration: Integration,
+        event: Mapping[str, Any],
+        organization: Organization,
+        repo: Repository,
+        host: str | None = None,
+    ) -> None:
         raise NotImplementedError
 
-    def __call__(self, event, host=None):
+    def __call__(self, event: Mapping[str, Any], host: str | None = None) -> None:
         external_id = event["installation"]["id"]
         if host:
             external_id = "{}:{}".format(host, event["installation"]["id"])
@@ -70,7 +83,7 @@ class Webhook:
             for repo in repos:
                 self._handle(integration, event, orgs[repo.organization_id], repo)
 
-    def update_repo_data(self, repo, event):
+    def update_repo_data(self, repo: Repository, event: Mapping[str, Any]) -> None:
         """
         Given a webhook payload, update stored repo data if needed.
 
@@ -100,7 +113,7 @@ class Webhook:
 
 class InstallationEventWebhook(Webhook):
     # https://developer.github.com/v3/activity/events/types/#installationevent
-    def __call__(self, event, host=None):
+    def __call__(self, event: Mapping[str, Any], host: str | None = None) -> None:
         installation = event["installation"]
         if installation and event["action"] == "deleted":
             external_id = event["installation"]["id"]
@@ -125,8 +138,7 @@ class InstallationEventWebhook(Webhook):
                     },
                 )
 
-    def _handle_delete(self, event, integration):
-
+    def _handle_delete(self, event: Mapping[str, Any], integration: Integration) -> None:
         organizations = integration.organizations.all()
 
         logger.info(
@@ -149,26 +161,40 @@ class InstallationEventWebhook(Webhook):
 
 class InstallationRepositoryEventWebhook(Webhook):
     # https://developer.github.com/v3/activity/events/types/#installationrepositoriesevent
-    def _handle(self, integration, event, organization, repo):
+    def _handle(
+        self,
+        integration: Integration,
+        event: Mapping[str, Any],
+        organization: Organization,
+        repo: Repository,
+        host: str | None = None,
+    ) -> None:
         pass
 
 
 class PushEventWebhook(Webhook):
     # https://developer.github.com/v3/activity/events/types/#pushevent
 
-    def is_anonymous_email(self, email):
+    def is_anonymous_email(self, email: str) -> bool:
         return email[-25:] == "@users.noreply.github.com"
 
-    def get_external_id(self, username):
+    def get_external_id(self, username: str) -> str:
         return f"github:{username}"
 
-    def get_idp_external_id(self, integration, host=None):
+    def get_idp_external_id(self, integration: Integration, host: str | None = None) -> str:
         return options.get("github-app.id")
 
-    def should_ignore_commit(self, commit):
+    def should_ignore_commit(self, commit: Mapping[str, Any]) -> bool:
         return GitHubRepositoryProvider.should_ignore_commit(commit["message"])
 
-    def _handle(self, integration, event, organization, repo, host=None):
+    def _handle(
+        self,
+        integration: Integration,
+        event: Mapping[str, Any],
+        organization: Organization,
+        repo: Repository,
+        host: str | None = None,
+    ) -> None:
         authors = {}
         client = integration.get_installation(organization_id=organization.id).get_client()
         gh_username_cache = {}
@@ -301,27 +327,43 @@ class PushEventWebhook(Webhook):
 
 class PullRequestEventWebhook(Webhook):
     # https://developer.github.com/v3/activity/events/types/#pullrequestevent
-    def is_anonymous_email(self, email):
+    def is_anonymous_email(self, email: str) -> bool:
         return email[-25:] == "@users.noreply.github.com"
 
-    def get_external_id(self, username):
+    def get_external_id(self, username: str) -> str:
         return f"github:{username}"
 
-    def get_idp_external_id(self, integration, host=None):
+    def get_idp_external_id(self, integration: Integration, host: str | None = None) -> str:
         return options.get("github-app.id")
 
-    def _handle(self, integration, event, organization, repo, host=None):
+    def _handle(
+        self,
+        integration: Integration,
+        event: Mapping[str, Any],
+        organization: Organization,
+        repo: Repository,
+        host: str | None = None,
+    ) -> None:
         pull_request = event["pull_request"]
         number = pull_request["number"]
         title = pull_request["title"]
         body = pull_request["body"]
         user = pull_request["user"]
 
-        # The value of the merge_commit_sha attribute changes depending on the state of the pull request. Before a pull request is merged, the merge_commit_sha attribute holds the SHA of the test merge commit. After a pull request is merged, the attribute changes depending on how the pull request was merged:
-        # - If the pull request was merged as a merge commit, the attribute represents the SHA of the merge commit.
-        # - If the pull request was merged via a squash, the attribute represents the SHA of the squashed commit on the base branch.
-        # - If the pull request was rebased, the attribute represents the commit that the base branch was updated to.
-        # https://developer.github.com/v3/pulls/#get-a-single-pull-request
+        """
+        The value of the merge_commit_sha attribute changes depending on the
+        state of the pull request. Before a pull request is merged, the
+        merge_commit_sha attribute holds the SHA of the test merge commit.
+        After a pull request is merged, the attribute changes depending on how
+        the pull request was merged:
+        - If the pull request was merged as a merge commit, the attribute
+         represents the SHA of the merge commit.
+        - If the pull request was merged via a squash, the attribute
+         represents the SHA of the squashed commit on the base branch.
+        - If the pull request was rebased, the attribute represents the commit
+         that the base branch was updated to.
+        https://developer.github.com/v3/pulls/#get-a-single-pull-request
+        """
         merge_commit_sha = pull_request["merge_commit_sha"] if pull_request["merged"] else None
 
         author_email = "{}@localhost".format(user["login"][:65])
@@ -375,10 +417,10 @@ class PullRequestEventWebhook(Webhook):
 
 class GitHubWebhookBase(View):
     # https://developer.github.com/webhooks/
-    def get_handler(self, event_type):
+    def get_handler(self, event_type: str) -> Callable[[], Callable[[JSONData], Any]] | None:
         return self._handlers.get(event_type)
 
-    def is_valid_signature(self, method, body, secret, signature):
+    def is_valid_signature(self, method: str, body: bytes, secret: str, signature: str) -> bool:
         if method == "sha1":
             mod = hashlib.sha1
         else:
@@ -393,13 +435,13 @@ class GitHubWebhookBase(View):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_logging_data(self):
-        pass
+    def get_logging_data(self) -> Mapping[str, Any] | None:
+        return None
 
-    def get_secret(self):
+    def get_secret(self) -> str:
         raise NotImplementedError
 
-    def handle(self, request):
+    def handle(self, request: Request) -> HttpResponse:
         secret = self.get_secret()
 
         if secret is None:
@@ -451,14 +493,14 @@ class GitHubIntegrationsWebhookEndpoint(GitHubWebhookBase):
     }
 
     @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponse:
         if request.method != "POST":
             return HttpResponse(status=405)
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_secret(self):
+    def get_secret(self) -> str:
         return options.get("github-app.webhook-secret")
 
-    def post(self, request):
+    def post(self, request: Request) -> HttpResponse:
         return self.handle(request)

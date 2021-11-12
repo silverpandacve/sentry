@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any, Mapping, Sequence
 
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
@@ -79,9 +80,9 @@ API_ERRORS = {
 }
 
 
-def build_repository_query(metadata, name, query):
+def build_repository_query(metadata: Mapping[str, Any], name: str, query: str) -> bytes:
     account_type = "user" if metadata["account_type"] == "User" else "org"
-    return (f"{account_type}:{name} {query}").encode()
+    return f"{account_type}:{name} {query}".encode()
 
 
 class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMixin):
@@ -104,7 +105,7 @@ class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMix
 
         return None
 
-    def get_repositories(self, query=None):
+    def get_repositories(self, query: str | None = None) -> Sequence[Mapping[str, Any]]:
         if not query:
             return [
                 {"name": i["name"], "identifier": i["full_name"]}
@@ -117,7 +118,7 @@ class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMix
             {"name": i["name"], "identifier": i["full_name"]} for i in response.get("items", [])
         ]
 
-    def search_issues(self, query):
+    def search_issues(self, query: str) -> Sequence[Any]:
         return self.get_client().search_issues(query)
 
     def format_source_url(self, repo: Repository, filepath: str, branch: str) -> str:
@@ -125,7 +126,7 @@ class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMix
         # "https://github.com/octokit/octokit.rb/blob/master/README.md"
         return f"https://github.com/{repo.name}/blob/{branch}/{filepath}"
 
-    def get_unmigratable_repositories(self):
+    def get_unmigratable_repositories(self) -> Sequence[Repository]:
         accessible_repos = self.get_repositories()
         accessible_repo_names = [r["identifier"] for r in accessible_repos]
 
@@ -135,7 +136,7 @@ class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMix
 
         return [repo for repo in existing_repos if repo.name not in accessible_repo_names]
 
-    def reinstall(self):
+    def reinstall(self) -> None:
         self.reinstall_repositories()
 
     def message_from_error(self, exc):
@@ -150,7 +151,7 @@ class GitHubIntegration(IntegrationInstallation, GitHubIssueBasic, RepositoryMix
         else:
             return ERR_INTERNAL
 
-    def has_repo_access(self, repo):
+    def has_repo_access(self, repo: Repository) -> bool:
         client = self.get_client()
         try:
             # make sure installation has access to this specific repo
