@@ -1,6 +1,7 @@
 import {Component} from 'react';
 import {InjectedRouter} from 'react-router';
 import styled from '@emotion/styled';
+import type {LineSeriesOption} from 'echarts';
 import {Location} from 'history';
 import compact from 'lodash/compact';
 import pick from 'lodash/pick';
@@ -100,7 +101,7 @@ class ReleasesAdoptionChart extends Component<Props> {
         ),
         emphasis: {
           focus: 'series',
-        }
+        } as LineSeriesOption['emphasis'],
       };
     });
   }
