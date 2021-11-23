@@ -16,7 +16,7 @@ import {OrganizationSummary, Project} from 'app/types';
 import {makeDefaultCta} from 'app/views/alerts/incidentRules/incidentRulePresets';
 import {IncidentRule} from 'app/views/alerts/incidentRules/types';
 import {
-  RELATED_ISSUES_QUERY_ERROR,
+  RELATED_ISSUES_BOOLEAN_QUERY_ERROR,
   RelatedIssuesNotAvailable,
 } from 'app/views/alerts/rules/details/relatedIssuesNotAvailable';
 import {isSessionAggregate} from 'app/views/alerts/utils';
@@ -35,7 +35,10 @@ class RelatedIssues extends Component<Props> {
   renderErrorMessage = ({detail}: {detail: string}, retry: () => void) => {
     const {rule, organization, projects, query, timePeriod} = this.props;
 
-    if (detail === RELATED_ISSUES_QUERY_ERROR && !isSessionAggregate(rule.aggregate)) {
+    if (
+      detail === RELATED_ISSUES_BOOLEAN_QUERY_ERROR &&
+      !isSessionAggregate(rule.aggregate)
+    ) {
       const ctaOpts = {
         orgSlug: organization.slug,
         projects,
