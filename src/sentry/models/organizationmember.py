@@ -25,7 +25,7 @@ from sentry.signals import member_invited
 from sentry.utils.http import absolute_uri
 
 if TYPE_CHECKING:
-    from sentry.models import Integration, User
+    from sentry.models import Integration, LostPasswordHashType, User
 
 
 INVITE_DAYS_VALID = 30
@@ -296,8 +296,10 @@ class OrganizationMember(Model):
         }
 
         if not self.user.password:
-            password_hash = LostPasswordHash.for_user(self.user)
-            context["set_password_url"] = password_hash.get_absolute_url(mode="set_password")
+            password_hash = LostPasswordHash.objects.for_user(self.user)
+            context["set_password_url"] = password_hash.get_absolute_url(
+                mode=LostPasswordHashType.SET_PASSWORD
+            )
 
         msg = MessageBuilder(
             subject=f"Action Required for {self.organization.name}",
