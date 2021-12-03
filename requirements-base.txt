@@ -61,7 +61,7 @@ symbolic==8.3.2
 toronado==0.1.0
 ua-parser==0.10.0
 unidiff==0.6.0
-urllib3==1.24.2
+urllib3==1.26.5
 # See if we can remove LDFLAGS from lib.sh
 # https://github.com/getsentry/sentry/pull/30094
 uWSGI==2.0.19.1
@@ -94,4 +94,4 @@ phabricator==0.7.0
 # test dependencies, but unable to move to requirements-test until
 # sentry.utils.pytest and sentry.testutils are moved to tests/
 selenium==3.141.0  # When upgrading, remove hack from lib.sh (see https://github.com/getsentry/sentry/pull/29887 for details)
-sqlparse==0.2.4
+sqlparse==0.4.2
