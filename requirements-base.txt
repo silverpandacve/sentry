@@ -59,7 +59,7 @@ statsd==3.3
 structlog==21.1.0
 symbolic==8.3.2
 toronado==0.1.0
-ua-parser==0.10.0
+ua-parser==0.15.0
 unidiff==0.6.0
 urllib3==1.24.2
 # See if we can remove LDFLAGS from lib.sh
