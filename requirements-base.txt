@@ -11,7 +11,7 @@ croniter==0.3.37
 datadog==0.29.3
 django-crispy-forms==1.8.1
 django-picklefield==2.1.0
-Django==2.2.24
+Django==3.2.19
 djangorestframework==3.11.2
 email-reply-parser==0.5.12
 google-api-core==1.25.1
@@ -32,11 +32,11 @@ mmh3==3.0.0
 parsimonious==0.8.0
 petname==2.6
 phonenumberslite==8.12.0
-Pillow==8.3.2
+Pillow==9.2.0
 progressbar2==3.32.0
 python-rapidjson==1.4
 psycopg2-binary==2.8.6
-PyJWT==2.1.0
+PyJWT==2.4.0
 python-dateutil==2.8.1
 python-memcached==1.59
 python-u2flib-server==5.0.0
@@ -61,14 +61,14 @@ symbolic==8.3.2
 toronado==0.1.0
 ua-parser==0.10.0
 unidiff==0.6.0
-urllib3==1.24.2
+urllib3==1.26.5
 # See if we can remove LDFLAGS from lib.sh
 # https://github.com/getsentry/sentry/pull/30094
 uWSGI==2.0.19.1
 zstandard==0.14.1
 
 msgpack==1.0.0
-cryptography==3.4.8
+cryptography==39.0.1
 # celery
 billiard==3.6.3
 kombu==4.6.11
@@ -94,4 +94,4 @@ phabricator==0.7.0
 # test dependencies, but unable to move to requirements-test until
 # sentry.utils.pytest and sentry.testutils are moved to tests/
 selenium==3.141.0  # When upgrading, remove hack from lib.sh (see https://github.com/getsentry/sentry/pull/29887 for details)
-sqlparse==0.2.4
+sqlparse==0.4.4
