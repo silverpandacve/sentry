@@ -25,7 +25,7 @@ google-cloud-storage==1.35.0
 # https://github.com/googleapis/python-crc32c/issues/83
 google-crc32c==1.1.2
 jsonschema==3.2.0
-lxml==4.6.3
+lxml==4.9.1
 maxminddb==2.0.3
 mistune==0.8.4
 mmh3==3.0.0
@@ -95,3 +95,6 @@ phabricator==0.7.0
 # sentry.utils.pytest and sentry.testutils are moved to tests/
 selenium==3.141.0  # When upgrading, remove hack from lib.sh (see https://github.com/getsentry/sentry/pull/29887 for details)
 sqlparse==0.2.4
+certifi>=2022.12.7 # not directly required, pinned by Snyk to avoid a vulnerability
+rsa>=4.7 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
